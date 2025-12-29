@@ -3,9 +3,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from typing import List
+from pathlib import Path
 
-import models, schemas, crud
-from database import SessionLocal, engine
+from . import models, schemas, crud
+from .database import SessionLocal, engine
 
 # Create tables
 models.Base.metadata.create_all(bind=engine)
@@ -38,10 +39,13 @@ async def check_in(checkin: schemas.CheckInCreate, db: Session = Depends(get_db)
 
 # --- Serve Frontend (Vanilla) ---
 
+# Get the absolute path to the frontend directory
+frontend_dir = Path(__file__).parent.parent / "frontend"
+
 # Mount the frontend directory to serve CSS/JS files
-app.mount("/static", StaticFiles(directory="../frontend"), name="static")
+app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
 
 # Serve the index.html on the root URL
 @app.get("/")
 async def read_root():
-    return FileResponse("../frontend/index.html")
+    return FileResponse(str(frontend_dir / "index.html"))

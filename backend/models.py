@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from database import Base
+from .database import Base
 
 class Habit(Base):
     __tablename__ = "habits"
