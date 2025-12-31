@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Boolean, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from database import Base
+from .database import Base
 
 class Habit(Base):
     __tablename__ = "habits"
@@ -8,6 +8,8 @@ class Habit(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     description = Column(String, nullable=True)
+    emoji = Column(String, default="📌")
+    goal = Column(Integer, default=7)  # Target frequency per week
 
     checkins = relationship("CheckIn", back_populates="habit")
 

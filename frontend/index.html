@@ -3,14 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MarkIt - Habit Tracker</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
-    <main>
-        <div id="tracker-grid">
-            </div>
-    </main>
+    <div class="app-container">
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <h1>📊 MarkIt - Habit Tracker</h1>
+            <button class="btn btn-primary" id="btn-add-habit">+ Add Habit</button>
+            <button class="btn" id="btn-toggle-analytics">📊 Show Analytics</button>
+            <button class="btn" id="btn-refresh">🔄 Refresh</button>
+        </div>
 
+        <!-- Spreadsheet Grid -->
+        <div class="spreadsheet-container">
+            <div class="spreadsheet-grid" id="tracker-grid">
+                <!-- Grid will be dynamically populated -->
+            </div>
+        </div>
+
+        <!-- Analytics Dashboard -->
+        <div class="analytics-section hidden" id="analytics-section">
+            <h2 class="analytics-header">📈 Analytics Dashboard</h2>
+            
+            <div class="charts-container">
+                <!-- Monthly Progress Chart -->
+                <div class="chart-box chart-full-width">
+                    <div class="chart-title">Overview Monthly Progress</div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-monthly-progress"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Top 10 Habits Chart -->
+                <div class="chart-box">
+                    <div class="chart-title">Top 10 Daily Habits</div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-top-habits"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Completion Ratio Chart -->
+                <div class="chart-box">
+                    <div class="chart-title">Completion Ratio</div>
+                    <div class="chart-wrapper">
+                        <canvas id="chart-completion"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Habit Modal -->
+    <div class="modal" id="habit-modal">
+        <div class="modal-content">
+            <h3 class="modal-header">Add New Habit</h3>
+            <form id="habit-form">
+                <div class="form-group">
+                    <label class="form-label">Habit Name</label>
+                    <input type="text" class="form-input" id="habit-name" required placeholder="e.g., Morning Exercise">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Weekly Goal (days per week)</label>
+                    <input type="number" class="form-input" id="habit-goal" min="1" max="7" value="7" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Choose an Emoji</label>
+                    <div class="emoji-picker" id="emoji-picker">
+                        <!-- Emoji options will be populated -->
+                    </div>
+                    <input type="hidden" id="habit-emoji" value="📌">
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn" id="btn-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Habit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="/static/script.js"></script>
 </body>
 </html>

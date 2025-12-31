@@ -19,6 +19,8 @@ class CheckIn(CheckInBase):
 class HabitBase(BaseModel):
     name: str
     description: Optional[str] = None
+    emoji: Optional[str] = "📌"
+    goal: Optional[int] = 7
 
 class HabitCreate(HabitBase):
     pass
