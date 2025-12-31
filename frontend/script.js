@@ -2,6 +2,9 @@
 let habits = [];
 let checkins = {};
 const WEEKS_TO_SHOW = 4;
+let analyticsVisible = false;
+let analyticsLoaded = false;
+let debounceTimer = null;
 
 // Common emojis for habits
 const COMMON_EMOJIS = [
@@ -21,8 +24,11 @@ function setupEventListeners() {
     document.getElementById('btn-cancel').addEventListener('click', closeHabitModal);
     document.getElementById('btn-refresh').addEventListener('click', () => {
         loadHabits();
-        loadAnalytics();
+        if (analyticsVisible) {
+            loadAnalytics();
+        }
     });
+    document.getElementById('btn-toggle-analytics').addEventListener('click', toggleAnalytics);
     document.getElementById('habit-form').addEventListener('submit', handleHabitSubmit);
     
     // Initialize emoji picker
@@ -90,7 +96,28 @@ async function handleHabitSubmit(e) {
 // ===== DATA LOADING =====
 async function initializeApp() {
     await loadHabits();
-    await loadAnalytics();
+    // Don't load analytics on init - wait for user to click toggle
+}
+
+function toggleAnalytics() {
+    const section = document.getElementById('analytics-section');
+    const btn = document.getElementById('btn-toggle-analytics');
+    
+    analyticsVisible = !analyticsVisible;
+    
+    if (analyticsVisible) {
+        section.classList.remove('hidden');
+        btn.textContent = '📊 Hide Analytics';
+        
+        // Load analytics only when showing for the first time
+        if (!analyticsLoaded) {
+            loadAnalytics();
+            analyticsLoaded = true;
+        }
+    } else {
+        section.classList.add('hidden');
+        btn.textContent = '📊 Show Analytics';
+    }
 }
 
 async function loadHabits() {
@@ -257,8 +284,16 @@ async function handleCheckboxToggle(e) {
         const key = `${habitId}-${date}`;
         checkins[key] = status;
         
-        // Reload analytics to reflect changes
-        await loadAnalytics();
+        // Debounce analytics reload - only reload if analytics is visible
+        // and wait 1 second after last checkbox change
+        if (analyticsVisible) {
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+            debounceTimer = setTimeout(() => {
+                loadAnalytics();
+            }, 1000);
+        }
     } catch (error) {
         console.error('Error updating checkin:', error);
         // Revert checkbox on error

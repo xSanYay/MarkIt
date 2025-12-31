@@ -256,6 +256,10 @@ body {
     border-top: 2px solid var(--color-grid-lines);
 }
 
+.analytics-section.hidden {
+    display: none;
+}
+
 .analytics-header {
     font-size: 14pt;
     font-weight: 600;
