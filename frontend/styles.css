@@ -1,40 +1,399 @@
+/* ===== DESIGN SYSTEM VARIABLES ===== */
+:root {
+    /* Color Palette */
+    --color-canvas: #FFFFFF;
+    --color-header-bg: #E8EAED;
+    --color-text-primary: #202124;
+    --color-text-secondary: #5F6368;
+    --color-grid-lines: #E0E0E0;
+    --color-checkbox-checked: #4285F4;
+    --color-checkbox-unchecked: #757575;
+    --color-chart-primary: #6D9EEB;
+    --color-chart-secondary: #D9D9D9;
+    --color-chart-line: #3C78D8;
+    
+    /* Typography */
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    --font-size-header: 11pt;
+    --font-size-day: 9pt;
+    --font-size-body: 10pt;
+    
+    /* Layout */
+    --col-habit-width: 250px;
+    --col-goal-width: 50px;
+    --col-day-width: 35px;
+    --checkbox-size: 14px;
+}
+
+/* ===== GLOBAL STYLES ===== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 body {
-    font-family: 'Segoe UI', sans-serif;
-    background-color: #f4f4f9;
-    color: #333;
+    font-family: var(--font-family);
+    background-color: #F9F9F9;
+    color: var(--color-text-primary);
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+/* ===== MAIN CONTAINER ===== */
+.app-container {
     display: flex;
     flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ===== TOOLBAR ===== */
+.toolbar {
+    background: var(--color-canvas);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-grid-lines);
+    display: flex;
     align-items: center;
-    margin: 0;
-    padding: 20px;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
-#tracker-grid {
-    display: grid;
-    /* First col is Goal Name, rest are dates */
-    grid-template-columns: 200px repeat(7, 1fr); 
-    gap: 10px;
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+.toolbar h1 {
+    font-size: 18pt;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    flex: 1;
 }
 
-.grid-header, .habit-name {
-    font-weight: bold;
-    padding: 10px;
-}
-
-.check-box {
-    width: 40px;
-    height: 40px;
-    background-color: #eee;
-    border-radius: 5px;
+.btn {
+    padding: 8px 16px;
+    border: 1px solid var(--color-grid-lines);
+    background: var(--color-canvas);
+    color: var(--color-text-primary);
     cursor: pointer;
-    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: var(--font-size-body);
+    font-family: var(--font-family);
+    transition: background 0.15s;
 }
 
-.check-box.marked {
-    background-color: #4CAF50; /* Green for success */
-    border-color: #388E3C;
+.btn:hover {
+    background: var(--color-header-bg);
+}
+
+.btn-primary {
+    background: var(--color-checkbox-checked);
+    color: white;
+    border-color: var(--color-checkbox-checked);
+}
+
+.btn-primary:hover {
+    background: var(--color-chart-line);
+}
+
+/* ===== SPREADSHEET GRID ===== */
+.spreadsheet-container {
+    background: var(--color-canvas);
+    flex: 1;
+    overflow: auto;
+    position: relative;
+}
+
+.spreadsheet-grid {
+    display: inline-grid;
+    min-width: 100%;
+    border: 1px solid var(--color-grid-lines);
+}
+
+/* Grid cell base */
+.grid-cell {
+    border-right: 1px solid var(--color-grid-lines);
+    border-bottom: 1px solid var(--color-grid-lines);
+    padding: 8px;
+    font-size: var(--font-size-body);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-canvas);
+}
+
+/* Header Cells */
+.header-section {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: var(--font-size-header);
+    background: var(--color-header-bg);
+    color: var(--color-text-primary);
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.header-week {
+    font-weight: bold;
+    font-size: var(--font-size-header);
+    background: var(--color-header-bg);
+    color: var(--color-text-primary);
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.header-day {
+    font-weight: bold;
+    font-size: var(--font-size-day);
+    background: var(--color-header-bg);
+    color: var(--color-text-primary);
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Frozen Left Columns */
+.frozen-col {
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    background: var(--color-canvas);
+}
+
+.frozen-col.header-section,
+.frozen-col.header-week,
+.frozen-col.header-day {
+    z-index: 30;
+    background: var(--color-header-bg);
+}
+
+.frozen-goal-col {
+    position: sticky;
+    left: var(--col-habit-width);
+    z-index: 20;
+    background: var(--color-canvas);
+}
+
+.frozen-goal-col.header-section,
+.frozen-goal-col.header-week,
+.frozen-goal-col.header-day {
+    z-index: 30;
+    background: var(--color-header-bg);
+}
+
+/* Habit Name Cell */
+.habit-cell {
+    justify-content: flex-start;
+    text-align: left;
+    gap: 6px;
+    width: var(--col-habit-width);
+}
+
+.habit-emoji {
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.habit-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Goal Cell */
+.goal-cell {
+    width: var(--col-goal-width);
+    color: var(--color-text-secondary);
+    font-weight: 500;
+}
+
+/* Day Cell */
+.day-cell {
+    width: var(--col-day-width);
+    padding: 4px;
+}
+
+/* Checkbox */
+.checkbox-input {
+    width: var(--checkbox-size);
+    height: var(--checkbox-size);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid var(--color-checkbox-unchecked);
+    border-radius: 2px;
+    background: var(--color-canvas);
+    position: relative;
+    margin: 0;
+}
+
+.checkbox-input:checked {
+    background: var(--color-checkbox-checked);
+    border-color: var(--color-checkbox-checked);
+}
+
+.checkbox-input:checked::after {
+    content: '✓';
+    position: absolute;
+    top: -2px;
+    left: 2px;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.checkbox-input:hover {
+    opacity: 0.8;
+}
+
+/* ===== ANALYTICS DASHBOARD ===== */
+.analytics-section {
+    background: var(--color-canvas);
+    padding: 32px 20px;
+    border-top: 2px solid var(--color-grid-lines);
+}
+
+.analytics-header {
+    font-size: 14pt;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: var(--color-text-primary);
+}
+
+.charts-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.chart-box {
+    background: var(--color-canvas);
+    border: 1px solid var(--color-grid-lines);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.chart-title {
+    font-size: 11pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    margin-bottom: 16px;
+}
+
+.chart-canvas {
+    width: 100%;
+    height: 250px;
+}
+
+.chart-full-width {
+    grid-column: 1 / -1;
+}
+
+/* ===== MODAL ===== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal-content {
+    background: var(--color-canvas);
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+    font-size: 16pt;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-label {
+    display: block;
+    font-size: var(--font-size-body);
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--color-text-primary);
+}
+
+.form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-grid-lines);
+    border-radius: 4px;
+    font-size: var(--font-size-body);
+    font-family: var(--font-family);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--color-checkbox-checked);
+}
+
+.emoji-picker {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.emoji-option {
+    font-size: 24px;
+    padding: 8px;
+    cursor: pointer;
+    text-align: center;
+    border-radius: 4px;
+    border: 2px solid transparent;
+}
+
+.emoji-option:hover {
+    background: var(--color-header-bg);
+}
+
+.emoji-option.selected {
+    border-color: var(--color-checkbox-checked);
+    background: #E8F0FE;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .charts-container {
+        grid-template-columns: 1fr;
+    }
+    
+    :root {
+        --col-habit-width: 180px;
+        --col-day-width: 30px;
+    }
 }
