@@ -435,7 +435,7 @@ function renderMonthlyProgressChart(data) {
             }]
         },
         options: {
-            responsive: true,
+            responsive: false,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
@@ -501,7 +501,7 @@ function renderTopHabitsChart(data) {
         },
         options: {
             indexAxis: 'y',
-            responsive: true,
+            responsive: false,
             maintainAspectRatio: false,
             plugins: {
                 legend: {
@@ -535,7 +535,7 @@ function renderCompletionChart(data) {
             }]
         },
         options: {
-            responsive: true,
+            responsive: false,
             maintainAspectRatio: false,
             cutout: '50%',
             plugins: {
