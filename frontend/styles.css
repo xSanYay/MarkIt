@@ -189,6 +189,7 @@ body {
     text-align: left;
     gap: 6px;
     width: var(--col-habit-width);
+    position: relative;
 }
 
 .habit-emoji {
@@ -201,6 +202,31 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.delete-habit-btn {
+    font-size: 12px;
+    padding: 2px 6px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s, background 0.2s;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.habit-cell:hover .delete-habit-btn {
+    opacity: 0.6;
+}
+
+.delete-habit-btn:hover {
+    opacity: 1 !important;
+    background: #f1f3f4;
+}
+
+.delete-habit-btn:active {
+    background: #e8eaed;
 }
 
 /* Goal Cell */

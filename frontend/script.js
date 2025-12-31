@@ -200,8 +200,15 @@ function renderHabitRow(grid, habit, dates) {
     nameSpan.className = 'habit-name';
     nameSpan.textContent = habit.name;
     
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-habit-btn';
+    deleteBtn.textContent = '🗑️';
+    deleteBtn.title = 'Delete habit';
+    deleteBtn.addEventListener('click', () => handleDeleteHabit(habit.id, habit.name));
+    
     habitCell.appendChild(emojiSpan);
     habitCell.appendChild(nameSpan);
+    habitCell.appendChild(deleteBtn);
     grid.appendChild(habitCell);
     
     // Goal cell
@@ -301,6 +308,31 @@ async function handleCheckboxToggle(e) {
     }
 }
 
+async function handleDeleteHabit(habitId, habitName) {
+    if (!confirm(`Are you sure you want to delete "${habitName}"? This will remove all associated check-ins.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/habits/${habitId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            await loadHabits();
+            // Reload analytics if visible
+            if (analyticsVisible) {
+                await loadAnalytics();
+            }
+        } else {
+            alert('Failed to delete habit');
+        }
+    } catch (error) {
+        console.error('Error deleting habit:', error);
+        alert('Error deleting habit');
+    }
+}
+
 // ===== ANALYTICS =====
 let charts = {
     monthlyProgress: null,
@@ -355,7 +387,10 @@ function renderMonthlyProgressChart(data) {
             scales: {
                 y: {
                     beginAtZero: true,
+                    min: 0,
                     max: 100,
+                    suggestedMin: 0,
+                    suggestedMax: 100,
                     ticks: {
                         callback: value => value + '%'
                     }
