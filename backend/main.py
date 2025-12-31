@@ -28,12 +28,12 @@ async def get_habits(db: Session = Depends(get_db)):
     habits = crud.get_habits(db)
     # Seed data if empty (for demonstration)
     if not habits:
-        crud.create_habit(db, schemas.HabitCreate(name="Morning Routine", emoji="\u23f0", goal=7))
-        crud.create_habit(db, schemas.HabitCreate(name="No Social Media Before Noon", emoji="\ud83d\udeab", goal=7))
-        crud.create_habit(db, schemas.HabitCreate(name="Drink Water", emoji="\ud83d\udca7", goal=7))
-        crud.create_habit(db, schemas.HabitCreate(name="Exercise", emoji="\ud83c\udfcb\ufe0f", goal=5))
-        crud.create_habit(db, schemas.HabitCreate(name="Read 10 Pages", emoji="\ud83d\udcda", goal=7))
-        crud.create_habit(db, schemas.HabitCreate(name="Meditation", emoji="\ud83e\uddd8", goal=7))
+        crud.create_habit(db, schemas.HabitCreate(name="Morning Routine", emoji="⏰", goal=7))
+        crud.create_habit(db, schemas.HabitCreate(name="No Social Media Before Noon", emoji="🚫", goal=7))
+        crud.create_habit(db, schemas.HabitCreate(name="Drink Water", emoji="💧", goal=7))
+        crud.create_habit(db, schemas.HabitCreate(name="Exercise", emoji="🏋️", goal=5))
+        crud.create_habit(db, schemas.HabitCreate(name="Read 10 Pages", emoji="📚", goal=7))
+        crud.create_habit(db, schemas.HabitCreate(name="Meditation", emoji="🧘", goal=7))
         habits = crud.get_habits(db)
     return habits
 
