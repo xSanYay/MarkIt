@@ -363,17 +363,28 @@ function renderMonthlyProgressChart(data) {
         charts.monthlyProgress.destroy();
     }
     
+    const labels = data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    const percentages = data.map(d => (d.percentage === null || d.percentage === undefined) ? null : d.percentage);
+    const hasData = percentages.some(value => value !== null);
+    
     charts.monthlyProgress = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })),
+            labels,
             datasets: [{
                 label: 'Completion %',
-                data: data.map(d => d.percentage),
+                data: percentages,
                 borderColor: '#3C78D8',
-                backgroundColor: 'rgba(109, 158, 235, 0.3)',
-                fill: true,
-                tension: 0.4
+                backgroundColor: 'rgba(109, 158, 235, 0.15)',
+                fill: false,
+                spanGaps: false,
+                tension: 0.3,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#3C78D8',
+                segment: {
+                    borderColor: ctx => ctx.p0.raw === null || ctx.p1.raw === null ? 'rgba(60, 120, 216, 0.35)' : '#3C78D8'
+                }
             }]
         },
         options: {
@@ -382,6 +393,21 @@ function renderMonthlyProgressChart(data) {
             plugins: {
                 legend: {
                     display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: context => {
+                            const record = data[context.dataIndex];
+                            if (context.raw === null) {
+                                return 'No activity logged';
+                            }
+                            const base = `Completion: ${context.raw}%`;
+                            if (record && typeof record.completed === 'number' && typeof record.total === 'number') {
+                                return `${base} (${record.completed}/${record.total})`;
+                            }
+                            return base;
+                        }
+                    }
                 }
             },
             scales: {
@@ -392,7 +418,14 @@ function renderMonthlyProgressChart(data) {
                     suggestedMin: 0,
                     suggestedMax: 100,
                     ticks: {
-                        callback: value => value + '%'
+                        callback: value => `${value}%`
+                    }
+                },
+                x: {
+                    ticks: {
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: hasData ? 10 : 6
                     }
                 }
             }

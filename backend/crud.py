@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, case
 from . import models, schemas
 from datetime import date, timedelta
 
@@ -50,31 +50,48 @@ def create_or_update_checkin(db: Session, checkin: schemas.CheckInCreate):
     return db_checkin
 
 def get_monthly_progress(db: Session):
-    """Get daily completion percentage for the last 30 days"""
+    """Daily completion percentages for the last 30 days based on recorded activity."""
     today = date.today()
-    start_date = today - timedelta(days=30)
-    
-    # Get all habits
-    habits = db.query(models.Habit).all()
-    total_habits = len(habits)
-    
-    if total_habits == 0:
-        return []
-    
+    days_to_show = 30
+    start_date = today - timedelta(days=days_to_show - 1)
+
+    activity_rows = db.query(
+        models.CheckIn.date,
+        func.sum(
+            case((models.CheckIn.status == True, 1), else_=0)
+        ).label("completed"),
+        func.count(models.CheckIn.id).label("total")
+    ).filter(
+        models.CheckIn.date >= start_date,
+        models.CheckIn.date <= today
+    ).group_by(
+        models.CheckIn.date
+    ).order_by(
+        models.CheckIn.date
+    ).all()
+
+    activity_map = {
+        row.date: {
+            "completed": row.completed or 0,
+            "total": row.total or 0
+        }
+        for row in activity_rows
+    }
+
     progress = []
-    for i in range(31):
-        current_date = start_date + timedelta(days=i)
-        completed = db.query(models.CheckIn).filter(
-            models.CheckIn.date == current_date,
-            models.CheckIn.status == True
-        ).count()
-        
-        percentage = (completed / total_habits) * 100 if total_habits > 0 else 0
+    for day_offset in range(days_to_show):
+        current_date = start_date + timedelta(days=day_offset)
+        snapshot = activity_map.get(current_date, {"completed": 0, "total": 0})
+        total = snapshot["total"]
+        percentage = round((snapshot["completed"] / total) * 100, 1) if total else None
+
         progress.append({
             "date": current_date.isoformat(),
-            "percentage": round(percentage, 1)
+            "percentage": percentage,
+            "completed": snapshot["completed"],
+            "total": total
         })
-    
+
     return progress
 
 def get_top_habits(db: Session):
