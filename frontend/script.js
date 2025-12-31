@@ -171,7 +171,12 @@ function renderHeaders(grid, dates) {
     
     // Week headers (7 days each)
     for (let week = 0; week < WEEKS_TO_SHOW; week++) {
-        const weekCell = createCell(`WEEK ${week + 1}`, 'header-week');
+        const startIndex = week * 7;
+        const endIndex = Math.min(startIndex + 6, dates.length - 1);
+        const startDate = dates[startIndex]?.date;
+        const endDate = dates[endIndex]?.date;
+        const label = (startDate && endDate) ? formatWeekLabel(startDate, endDate) : `Week ${week + 1}`;
+        const weekCell = createCell(label, 'header-week');
         weekCell.style.gridColumn = `span 7`;
         grid.appendChild(weekCell);
     }
@@ -184,7 +189,15 @@ function renderHeaders(grid, dates) {
     grid.appendChild(emptyCell2);
     
     dates.forEach(dateObj => {
-        const dayCell = createCell(dateObj.dayName, 'header-day');
+        const classes = ['header-day'];
+        if (dateObj.isToday) {
+            classes.push('today-highlight');
+        }
+        if (dateObj.isFuture) {
+            classes.push('future-day');
+        }
+        const dayLabel = `${dateObj.dayName} ${dateObj.date.getDate()}`;
+        const dayCell = createCell(dayLabel, classes.join(' '));
         grid.appendChild(dayCell);
     });
 }
@@ -217,12 +230,20 @@ function renderHabitRow(grid, habit, dates) {
     
     // Date checkboxes
     dates.forEach(dateObj => {
-        const dayCell = createCell('', 'grid-cell day-cell');
+        const classes = ['grid-cell', 'day-cell'];
+        if (dateObj.isToday) {
+            classes.push('today-cell');
+        }
+        if (dateObj.isFuture) {
+            classes.push('future-cell');
+        }
+        const dayCell = createCell('', classes.join(' '));
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.className = 'checkbox-input';
         checkbox.dataset.habitId = habit.id;
         checkbox.dataset.date = dateObj.dateStr;
+        checkbox.title = dateObj.isFuture ? 'Scheduled ahead; counts toward analytics once the day passes.' : 'Mark completion for this day.';
         
         // Check if already marked
         const key = `${habit.id}-${dateObj.dateStr}`;
@@ -247,20 +268,29 @@ function createCell(content, className) {
 function generateDateRange(weeks) {
     const dates = [];
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const daysToShow = weeks * 7;
-    
+    const futureDays = Math.min(7, daysToShow);
+    const pastDays = Math.max(daysToShow - futureDays, 0);
+    const startDate = new Date(today);
+    if (pastDays > 0) {
+        startDate.setDate(today.getDate() - (pastDays - 1));
+    }
+
     for (let i = 0; i < daysToShow; i++) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + i);
+        const date = new Date(startDate);
+        date.setDate(startDate.getDate() + i);
         
         dates.push({
-            date: date,
+            date,
             dateStr: formatDateISO(date),
             dayName: getDayName(date),
-            dayOfWeek: date.getDay()
+            dayOfWeek: date.getDay(),
+            isToday: isSameDay(date, today),
+            isFuture: date > today
         });
     }
-    
+
     return dates;
 }
 
@@ -271,6 +301,18 @@ function formatDateISO(date) {
 function getDayName(date) {
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     return days[date.getDay()];
+}
+
+function isSameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() &&
+           a.getMonth() === b.getMonth() &&
+           a.getDate() === b.getDate();
+}
+
+function formatWeekLabel(startDate, endDate) {
+    const startLabel = startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endLabel = endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${startLabel} - ${endLabel}`;
 }
 
 // ===== CHECKBOX INTERACTION =====
@@ -358,6 +400,7 @@ async function loadAnalytics() {
 
 function renderMonthlyProgressChart(data) {
     const ctx = document.getElementById('chart-monthly-progress');
+    const chartContainer = ctx.closest('.chart-box');
     
     if (charts.monthlyProgress) {
         charts.monthlyProgress.destroy();
@@ -366,6 +409,10 @@ function renderMonthlyProgressChart(data) {
     const labels = data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
     const percentages = data.map(d => (d.percentage === null || d.percentage === undefined) ? null : d.percentage);
     const hasData = percentages.some(value => value !== null);
+    
+    if (chartContainer) {
+        chartContainer.classList.toggle('empty-state', !hasData);
+    }
     
     charts.monthlyProgress = new Chart(ctx, {
         type: 'line',
@@ -377,7 +424,7 @@ function renderMonthlyProgressChart(data) {
                 borderColor: '#3C78D8',
                 backgroundColor: 'rgba(109, 158, 235, 0.15)',
                 fill: false,
-                spanGaps: false,
+                spanGaps: true,
                 tension: 0.3,
                 pointRadius: 4,
                 pointHoverRadius: 6,
