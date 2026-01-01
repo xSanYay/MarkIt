@@ -31,6 +31,9 @@ function setupEventListeners() {
     document.getElementById('btn-toggle-analytics').addEventListener('click', toggleAnalytics);
     document.getElementById('habit-form').addEventListener('submit', handleHabitSubmit);
     
+    document.getElementById('btn-settings').addEventListener('click', openSettingsModal);
+    document.getElementById('btn-close-settings').addEventListener('click', closeSettingsModal);
+
     // Initialize emoji picker
     initializeEmojiPicker();
 }
@@ -76,12 +79,13 @@ async function handleHabitSubmit(e) {
     const name = document.getElementById('habit-name').value;
     const goal = parseInt(document.getElementById('habit-goal').value);
     const emoji = document.getElementById('habit-emoji').value;
+    const autoComplete = document.getElementById('habit-auto-complete').checked;
     
     try {
         const response = await fetch('/api/habits', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, goal, emoji, description: '' })
+            body: JSON.stringify({ name, goal, emoji, description: '', auto_complete: autoComplete })
         });
         
         if (response.ok) {
@@ -90,6 +94,57 @@ async function handleHabitSubmit(e) {
         }
     } catch (error) {
         console.error('Error creating habit:', error);
+    }
+}
+
+// ===== SETTINGS MODAL =====
+function openSettingsModal() {
+    document.getElementById('settings-modal').classList.add('active');
+    renderSettingsHabitList();
+}
+
+function closeSettingsModal() {
+    document.getElementById('settings-modal').classList.remove('active');
+}
+
+function renderSettingsHabitList() {
+    const list = document.getElementById('settings-habit-list');
+    list.innerHTML = '';
+    
+    habits.forEach(habit => {
+        const item = document.createElement('div');
+        item.className = 'settings-habit-item';
+        
+        const label = document.createElement('label');
+        label.className = 'settings-habit-label';
+        
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = habit.auto_complete;
+        checkbox.addEventListener('change', () => toggleHabitAutoComplete(habit.id, checkbox.checked));
+        
+        const text = document.createTextNode(` ${habit.emoji} ${habit.name}`);
+        
+        label.appendChild(checkbox);
+        label.appendChild(text);
+        item.appendChild(label);
+        list.appendChild(item);
+    });
+}
+
+async function toggleHabitAutoComplete(habitId, autoComplete) {
+    const habit = habits.find(h => h.id === habitId);
+    if (!habit) return;
+    
+    try {
+        await fetch(`/api/habits/${habitId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...habit, auto_complete: autoComplete })
+        });
+        habit.auto_complete = autoComplete;
+    } catch (error) {
+        console.error('Error updating habit settings:', error);
     }
 }
 
@@ -267,16 +322,10 @@ function createCell(content, className) {
 // ===== DATE UTILITIES =====
 function generateDateRange(weeks) {
     const dates = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Start from Jan 1, 2026
+    const startDate = new Date('2026-01-01T00:00:00');
     const daysToShow = weeks * 7;
-    const futureDays = Math.min(7, daysToShow);
-    const pastDays = Math.max(daysToShow - futureDays, 0);
-    const startDate = new Date(today);
-    if (pastDays > 0) {
-        startDate.setDate(today.getDate() - (pastDays - 1));
-    }
-
+    
     for (let i = 0; i < daysToShow; i++) {
         const date = new Date(startDate);
         date.setDate(startDate.getDate() + i);
@@ -286,8 +335,8 @@ function generateDateRange(weeks) {
             dateStr: formatDateISO(date),
             dayName: getDayName(date),
             dayOfWeek: date.getDay(),
-            isToday: isSameDay(date, today),
-            isFuture: date > today
+            isToday: isSameDay(date, new Date()),
+            isFuture: date > new Date()
         });
     }
 
@@ -295,7 +344,11 @@ function generateDateRange(weeks) {
 }
 
 function formatDateISO(date) {
-    return date.toISOString().split('T')[0];
+    // Build an ISO string using local date parts to avoid timezone shifts
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 function getDayName(date) {
@@ -376,12 +429,6 @@ async function handleDeleteHabit(habitId, habitName) {
 }
 
 // ===== ANALYTICS =====
-let charts = {
-    monthlyProgress: null,
-    topHabits: null,
-    completion: null
-};
-
 async function loadAnalytics() {
     try {
         const [progressData, topHabitsData, completionData] = await Promise.all([
@@ -390,159 +437,42 @@ async function loadAnalytics() {
             fetch('/api/analytics/completion-ratio').then(r => r.json())
         ]);
         
-        renderMonthlyProgressChart(progressData);
-        renderTopHabitsChart(topHabitsData);
-        renderCompletionChart(completionData);
+        renderStats(progressData, topHabitsData, completionData);
     } catch (error) {
         console.error('Error loading analytics:', error);
     }
 }
 
-function renderMonthlyProgressChart(data) {
-    const ctx = document.getElementById('chart-monthly-progress');
-    const chartContainer = ctx.closest('.chart-box');
-    
-    if (charts.monthlyProgress) {
-        charts.monthlyProgress.destroy();
-    }
-    
-    const labels = data.map(d => new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    const percentages = data.map(d => (d.percentage === null || d.percentage === undefined) ? null : d.percentage);
-    const hasData = percentages.some(value => value !== null);
-    
-    if (chartContainer) {
-        chartContainer.classList.toggle('empty-state', !hasData);
-    }
-    
-    charts.monthlyProgress = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels,
-            datasets: [{
-                label: 'Completion %',
-                data: percentages,
-                borderColor: '#3C78D8',
-                backgroundColor: 'rgba(109, 158, 235, 0.15)',
-                fill: false,
-                spanGaps: true,
-                tension: 0.3,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#3C78D8',
-                segment: {
-                    borderColor: ctx => ctx.p0.raw === null || ctx.p1.raw === null ? 'rgba(60, 120, 216, 0.35)' : '#3C78D8'
-                }
-            }]
-        },
-        options: {
-            responsive: false,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: context => {
-                            const record = data[context.dataIndex];
-                            if (context.raw === null) {
-                                return 'No activity logged';
-                            }
-                            const base = `Completion: ${context.raw}%`;
-                            if (record && typeof record.completed === 'number' && typeof record.total === 'number') {
-                                return `${base} (${record.completed}/${record.total})`;
-                            }
-                            return base;
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    min: 0,
-                    max: 100,
-                    suggestedMin: 0,
-                    suggestedMax: 100,
-                    ticks: {
-                        callback: value => `${value}%`
-                    }
-                },
-                x: {
-                    ticks: {
-                        maxRotation: 0,
-                        autoSkip: true,
-                        maxTicksLimit: hasData ? 10 : 6
-                    }
-                }
-            }
-        }
-    });
-}
+function renderStats(progressData, topHabitsData, completionData) {
+    // 1. Monthly Completion Rate (Average of last 30 days)
+    const validDays = progressData.filter(d => d.percentage !== null);
+    const avgCompletion = validDays.length > 0 
+        ? (validDays.reduce((sum, d) => sum + d.percentage, 0) / validDays.length).toFixed(1) 
+        : 0;
+    document.getElementById('stat-monthly-progress').textContent = `${avgCompletion}%`;
 
-function renderTopHabitsChart(data) {
-    const ctx = document.getElementById('chart-top-habits');
-    
-    if (charts.topHabits) {
-        charts.topHabits.destroy();
-    }
-    
-    charts.topHabits = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: data.map(h => `${h.emoji} ${h.name}`),
-            datasets: [{
-                label: 'Completions',
-                data: data.map(h => h.count),
-                backgroundColor: '#6D9EEB',
-                borderColor: '#3C78D8',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: false,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
+    // 2. Top Habit
+    const topHabit = topHabitsData.length > 0 ? topHabitsData[0] : null;
+    document.getElementById('stat-top-habit').textContent = topHabit 
+        ? `${topHabit.emoji} ${topHabit.name}` 
+        : 'None yet';
 
-function renderCompletionChart(data) {
-    const ctx = document.getElementById('chart-completion');
-    
-    if (charts.completion) {
-        charts.completion.destroy();
-    }
-    
-    charts.completion = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Completed', 'Remaining'],
-            datasets: [{
-                data: [data.completed, data.remaining],
-                backgroundColor: ['#6D9EEB', '#D9D9D9'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: false,
-            maintainAspectRatio: false,
-            cutout: '50%',
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
+    // 3. Total Check-ins (from completion data)
+    document.getElementById('stat-total-checkins').textContent = completionData.completed;
+
+    // 4. Current Streak (Calculated from daily completion > 0)
+    // This is a simplified "global streak" - days in a row with at least one check-in
+    let streak = 0;
+    // progressData is ordered by date ascending. Reverse to check from today backwards.
+    const reversedData = [...progressData].reverse();
+    for (const day of reversedData) {
+        if (day.completed > 0) {
+            streak++;
+        } else {
+            // Allow today to be incomplete if it's just started, but break if yesterday was empty
+            const isToday = isSameDay(new Date(day.date), new Date());
+            if (!isToday) break;
         }
-    });
+    }
+    document.getElementById('stat-streak').textContent = `${streak} days`;
 }

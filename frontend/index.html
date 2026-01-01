@@ -13,6 +13,7 @@
             <h1>📊 MarkIt - Habit Tracker</h1>
             <button class="btn btn-primary" id="btn-add-habit">+ Add Habit</button>
             <button class="btn" id="btn-toggle-analytics">📊 Show Analytics</button>
+            <button class="btn" id="btn-settings">⚙️ Settings</button>
             <button class="btn" id="btn-refresh">🔄 Refresh</button>
         </div>
 
@@ -27,29 +28,33 @@
         <div class="analytics-section hidden" id="analytics-section">
             <h2 class="analytics-header">📈 Analytics Dashboard</h2>
             
-            <div class="charts-container">
-                <!-- Monthly Progress Chart -->
-                <div class="chart-box chart-full-width">
-                    <div class="chart-title">Overview Monthly Progress</div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart-monthly-progress"></canvas>
-                    </div>
+            <div class="stats-container">
+                <!-- Monthly Progress Card -->
+                <div class="stat-card">
+                    <div class="stat-title">Monthly Completion</div>
+                    <div class="stat-value" id="stat-monthly-progress">--%</div>
+                    <div class="stat-desc">Average completion rate</div>
                 </div>
                 
-                <!-- Top 10 Habits Chart -->
-                <div class="chart-box">
-                    <div class="chart-title">Top 10 Daily Habits</div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart-top-habits"></canvas>
-                    </div>
+                <!-- Top Habit Card -->
+                <div class="stat-card">
+                    <div class="stat-title">Top Habit</div>
+                    <div class="stat-value" id="stat-top-habit">--</div>
+                    <div class="stat-desc">Most consistent habit</div>
                 </div>
                 
-                <!-- Completion Ratio Chart -->
-                <div class="chart-box">
-                    <div class="chart-title">Completion Ratio</div>
-                    <div class="chart-wrapper">
-                        <canvas id="chart-completion"></canvas>
-                    </div>
+                <!-- Completion Ratio Card -->
+                <div class="stat-card">
+                    <div class="stat-title">Total Check-ins</div>
+                    <div class="stat-value" id="stat-total-checkins">--</div>
+                    <div class="stat-desc">This month</div>
+                </div>
+
+                <!-- Streak Card -->
+                <div class="stat-card">
+                    <div class="stat-title">Current Streak</div>
+                    <div class="stat-value" id="stat-streak">--</div>
+                    <div class="stat-desc">Days in a row</div>
                 </div>
             </div>
         </div>
@@ -69,6 +74,12 @@
                     <label class="form-label">Weekly Goal (days per week)</label>
                     <input type="number" class="form-input" id="habit-goal" min="1" max="7" value="7" required>
                 </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <input type="checkbox" id="habit-auto-complete"> Auto-complete daily
+                    </label>
+                </div>
                 
                 <div class="form-group">
                     <label class="form-label">Choose an Emoji</label>
@@ -86,7 +97,23 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Settings Modal -->
+    <div class="modal" id="settings-modal">
+        <div class="modal-content">
+            <h3 class="modal-header">Settings</h3>
+            <div class="form-group">
+                <label class="form-label">Auto-complete Habits</label>
+                <p class="text-secondary">Select habits to be automatically marked as completed daily.</p>
+                <div id="settings-habit-list">
+                    <!-- Habit list for auto-complete settings -->
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn" id="btn-close-settings">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script src="/static/script.js"></script>
 </body>
 </html>

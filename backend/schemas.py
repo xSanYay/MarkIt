@@ -21,6 +21,7 @@ class HabitBase(BaseModel):
     description: Optional[str] = None
     emoji: Optional[str] = "📌"
     goal: Optional[int] = 7
+    auto_complete: Optional[bool] = False
 
 class HabitCreate(HabitBase):
     pass
