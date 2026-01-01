@@ -10,6 +10,7 @@ class Habit(Base):
     description = Column(String, nullable=True)
     emoji = Column(String, default="📌")
     goal = Column(Integer, default=7)  # Target frequency per week
+    auto_complete = Column(Boolean, default=False)
 
     checkins = relationship("CheckIn", back_populates="habit")
 
